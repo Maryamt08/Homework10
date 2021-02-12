@@ -10,9 +10,100 @@ const outputPath = path.join(OUTPUT_DIR, "team.html");
 
 const render = require("./lib/htmlRenderer");
 
-
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
+
+const output = []
+const questions = [
+    {
+        type: "list",
+        name: "role",
+        message: "What is your role on the team?",
+        choices: ["Manager", "Intern", "Engineer"]
+    },
+    {
+        type: "input",
+        name: "name",
+        message: "Please enter your full name: "
+    },
+    {
+        type: "input",
+        name: "email",
+        message: "What is your email address?"
+    },
+    {
+        type: "input",
+        name: "employeeID",
+        message: "What is your employee ID number?"
+    },
+    {
+        type: "input",
+        name: "school",
+        message: "What school did the intern attend?",
+        when: function(answers) {
+            return answers.role === "Intern";
+          }
+    },
+    {
+        type: "input",
+        name: "github",
+        message: "What is the engineer's GitHub username?",
+        when: function(answers) {
+            return answers.role === "Engineer";
+          }
+    },
+    {
+        type: "input",
+        name: "officeNumber",
+        message: "What is the manager's office number?",
+        when: function(answers) {
+            return answers.role === "Manager";
+          }
+    },
+    {
+        type: "confirm",
+        name: "addEmployee",
+        message: "Would you like to add another employee?"
+    },
+]
+function promptUser(){
+    inquirer.prompt(questions)
+    .then(answers => {
+        output.push(answers)
+        if(answers.addEmployee){
+            promptUser();
+        }
+        else {
+            const team = output.map(worker =>{
+                switch(worker.role){
+                    case "Manager":
+                        return new Manager(worker.name, worker.id, worker.email, worker.office)
+                    case "Engineer":
+                        return new Engineer(worker.name, worker.id, worker.email, worker.github)
+                    case "Intern":
+                        return new Intern(worker.name, worker.id, worker.email, worker.school)
+                    default:
+                        throw "Employee Type Unknown"
+                }
+            });
+            fs.writeFile(outputPath, render(team), err =>{
+                if(err){
+                    throw err
+                }
+                console.log("Success!")
+            });
+            
+        }
+    })
+    .catch(err => {
+        if(err){
+            console.log("Error: ", err);
+        }
+    })
+}
+
+promptUser();
+
 
 // After the user has input all employees desired, call the `render` function (required
 // above) and pass in an array containing all employee objects; the `render` function will
